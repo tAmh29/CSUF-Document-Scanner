@@ -1,23 +1,42 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
 import os
+from reference_graph import ReferenceGraph
+
+graph = ReferenceGraph() # Initialize the reference graph
+
+def create_nodes_for_selected_files():
+    # Create node for main file
+    main_file = selected_main_file_var.get()
+    if main_file:
+        graph.add_node(main_file)
+
+    # Create nodes for all secondary files
+    selected_indices = secondary_files_listbox.curselection()
+    for idx in selected_indices:
+        sec_file = secondary_files_listbox.get(idx)
+        if sec_file:
+            graph.add_node(sec_file)
 
 def select_main_file():
     global main_directory
-    directory = filedialog.askdirectory()
-    if directory:
-        main_directory = directory
+    file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
+    if file_path:
+        main_directory = os.path.dirname(file_path)
+        selected_main_file_var.set(os.path.basename(file_path)) # Set the selected file name
         update_file_list(main_files_listbox, main_directory)
 
 def select_secondary_file():
     global secondary_directory
-    directory = filedialog.askdirectory()
-    if directory:
-        secondary_directory = directory
+    file_path = filedialog.askopenfilename(filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")])
+    if file_path:
+        secondary_directory = os.path.dirname(file_path)
+        selected_secondary_file_var.set(os.path.basename(file_path))
         update_file_list(secondary_files_listbox, secondary_directory)
 
 def sort_files(directory, sort_option):
-    files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+    files = [f for f in os.listdir(directory) 
+             if os.path.isfile(os.path.join(directory, f)) and f.lower().endswith('.txt')]
     if sort_option == "Name":
         return sorted(files)
     elif sort_option == "Date Modified":
@@ -92,11 +111,15 @@ def search_secondary_substring():
         start_index = end_index
 
 def show_reference_data():
+    create_nodes_for_selected_files()
+
     ref_window = tk.Toplevel(root)
     ref_window.title("Reference Data")
     ref_text = tk.Text(ref_window, height=20, width=60)
     ref_text.pack(padx=10, pady=10)
-    ref_text.insert(tk.END, "Reference data goes here...")
+    ref_text.insert(tk.END, "Reference data goes here...\n")
+    for node in graph.nodes.values():
+        ref_text.insert(tk.END, f"Document: {node.document_name}\n")
 
 root = tk.Tk()
 root.title("CSUF Document Scanner")
