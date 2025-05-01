@@ -5,7 +5,7 @@ from reference_graph import ReferenceGraph
 
 graph = ReferenceGraph() # Initialize the reference graph
 
-def create_nodes_for_selected_files():
+""" def create_nodes_for_selected_files():
     # Create node for main file
     main_file = selected_main_file_var.get()
     if main_file:
@@ -16,7 +16,22 @@ def create_nodes_for_selected_files():
     for idx in selected_indices:
         sec_file = secondary_files_listbox.get(idx)
         if sec_file:
-            graph.add_node(sec_file)
+            graph.add_node(sec_file) """
+
+
+def create_nodes_for_selected_files():
+    # Create node for main file
+    main_file = selected_main_file_var.get()
+    if main_file:
+        graph.add_node(main_file)
+
+    # Create nodes for all files listed in the tertiary directory listbox
+    tertiary_items = tertiary_files_listbox.get(0, tk.END)
+    for filename in tertiary_items:
+        if filename:
+            graph.add_node(filename)
+
+
 
 def select_main_file():
     global main_directory
@@ -36,7 +51,8 @@ def select_secondary_file():
 
 def sort_files(directory, sort_option):
     files = [f for f in os.listdir(directory) 
-             if os.path.isfile(os.path.join(directory, f)) and f.lower().endswith('.txt')]
+    if os.path.isfile(os.path.join(directory, f)) and f.lower().endswith('.txt')]
+    
     if sort_option == "Name":
         return sorted(files)
     elif sort_option == "Date Modified":
@@ -69,6 +85,45 @@ def on_main_file_double_click(event):
             main_text.delete('1.0', tk.END)
             main_text.insert(tk.END, f"Error reading file:\n{e}")
 
+""" def on_secondary_file_double_click(event):
+    selected = secondary_files_listbox.curselection()
+    if selected and secondary_directory:
+        filename = secondary_files_listbox.get(selected[0])
+        selected_secondary_file_var.set(filename)
+        file_path = os.path.join(secondary_directory, filename)
+        try:
+            with open(file_path, 'r') as f:
+                content = f.read()
+            secondary_text.delete('1.0', tk.END)
+            secondary_text.insert(tk.END, content)
+        except Exception as e:
+            secondary_text.delete('1.0', tk.END)
+            secondary_text.insert(tk.END, f"Error reading file:\n{e}") """
+
+""" def on_secondary_file_double_click(event):
+    selected = secondary_files_listbox.curselection()
+    if selected and secondary_directory:
+        filename = secondary_files_listbox.get(selected[0])
+        selected_secondary_file_var.set(filename)
+        file_path = os.path.join(secondary_directory, filename)
+        try:
+            with open(file_path, 'r') as f:
+                content = f.read()
+            secondary_text.delete('1.0', tk.END)
+            secondary_text.insert(tk.END, content)
+        except Exception as e:
+            secondary_text.delete('1.0', tk.END)
+            secondary_text.insert(tk.END, f"Error reading file:\n{e}")
+        
+        # --- Append to tertiary field ---
+        current_value = selected_tertiary_file_var.get()
+        if filename not in current_value.split(', '):  # Avoid duplicate entries
+            if current_value:
+                new_value = f"{current_value}, {filename}"
+            else:
+                new_value = filename
+            selected_tertiary_file_var.set(new_value) """
+
 def on_secondary_file_double_click(event):
     selected = secondary_files_listbox.curselection()
     if selected and secondary_directory:
@@ -83,6 +138,12 @@ def on_secondary_file_double_click(event):
         except Exception as e:
             secondary_text.delete('1.0', tk.END)
             secondary_text.insert(tk.END, f"Error reading file:\n{e}")
+        
+        # --- Add to tertiary listbox if not already present ---
+        existing_items = tertiary_files_listbox.get(0, tk.END)
+        if filename not in existing_items:
+            tertiary_files_listbox.insert(tk.END, filename)
+
 
 def search_main_substring():
     search_term = search_main_entry.get()
@@ -194,6 +255,30 @@ secondary_files_listbox.bind("<Double-Button-1>", on_secondary_file_double_click
 
 secondary_directory_frame.grid_rowconfigure(1, weight=1)
 secondary_directory_frame.grid_columnconfigure(0, weight=1)
+
+# Tertiary File Directory Frame (Rightmost Side)
+tertiary_directory_frame = tk.Frame(directories_frame)
+tertiary_directory_frame.grid(row=0, column=2, padx=10, sticky="nsew")
+
+tertiary_directory_label = tk.Label(tertiary_directory_frame, text="Tertiary File Directory:")
+tertiary_directory_label.grid(row=0, column=0, sticky="w")
+
+tertiary_sort_options = ["Name", "Date Modified", "Size"]
+tertiary_sort_dropdown = ttk.Combobox(tertiary_directory_frame, values=tertiary_sort_options, state="readonly", width=15)
+tertiary_sort_dropdown.set("Name")
+tertiary_sort_dropdown.grid(row=0, column=1, padx=5, sticky="e")
+
+selected_tertiary_file_var = tk.StringVar()
+tertiary_selected_entry = tk.Entry(tertiary_directory_frame, textvariable=selected_tertiary_file_var, state="readonly", width=40)
+tertiary_selected_entry.grid(row=0, column=2, padx=5, sticky="e")
+
+tertiary_files_listbox = tk.Listbox(tertiary_directory_frame, height=5)
+tertiary_files_listbox.grid(row=1, column=0, columnspan=3, sticky="nsew")
+#tertiary_files_listbox.bind("<Double-Button-1>", on_tertiary_file_double_click)
+
+tertiary_directory_frame.grid_rowconfigure(1, weight=1)
+tertiary_directory_frame.grid_columnconfigure(0, weight=1)
+
 
 # Middle Frame for Main File Text and Search
 middle_frame = tk.Frame(root)
