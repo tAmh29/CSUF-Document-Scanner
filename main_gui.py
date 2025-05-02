@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 import os
 from reference_graph import ReferenceGraph
+from plagarizor import detect_plagiarism
 
 graph = ReferenceGraph() # Initialize the reference graph
 
@@ -182,6 +183,35 @@ def show_reference_data():
     for node in graph.nodes.values():
         ref_text.insert(tk.END, f"Document: {node.document_name}\n")
 
+def run_plagiarism_analysis():
+    main_file = selected_main_file_var.get()
+    secondary_files = [secondary_files_listbox.get(i) for i in secondary_files_listbox.curselection()] ## get selected files
+    
+    if main_file and secondary_files:
+        # Read the main file content
+        with open(os.path.join(main_directory, main_file), 'r') as f:
+            main_content = f.read()
+
+        CHOPLENGTH = 10
+        analysis_text.delete('1.0', tk.END)
+        analysis_text.insert(tk.END, "Plagiarism Analysis Results:\n")
+
+        for sec_file in secondary_files:
+            with open(os.path.join(secondary_directory, sec_file), 'r') as f:
+                reference_content = f.read()
+
+            results = detect_plagiarism(reference_content, main_content, CHOPLENGTH)
+
+            if not results:
+                analysis_text.insert(tk.END, f"No plagiarism detected from {sec_file}.\n")
+            else:
+                for result in results:
+                    analysis_text.insert(tk.END, f"[{sec_file}] Match found at index {result['examined_index']} in main file:\n")
+                    analysis_text.insert(tk.END, f">>> {result['match_text']}\n")
+                    analysis_text.insert(tk.END, f"Originally found at index {result['reference_index']} in reference file.\n\n")
+        analysis_text.insert(tk.END, "Analysis complete.\n")
+    
+
 root = tk.Tk()
 root.title("CSUF Document Scanner")
 root.geometry("800x700")
@@ -203,6 +233,9 @@ select_secondary_btn.grid(row=0, column=1, padx=5)
 # "Show Reference Data" Button now placed after the Select Main File and Select Secondary File buttons
 reference_button = tk.Button(top_frame, text="Show Reference Data", command=show_reference_data)
 reference_button.grid(row=0, column=2, padx=5)
+
+plagiarism_button = tk.Button(top_frame, text="Run Plagiarism Check", command=run_plagiarism_analysis)
+plagiarism_button.grid(row=0, column=3, padx=5)
 
 # Variables to hold the selected file names
 selected_main_file_var = tk.StringVar()
