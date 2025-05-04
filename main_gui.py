@@ -87,31 +87,38 @@ def sort_files_in_listbox(listbox_number,directory):
         sort_key = tertiary_sort_dropdown.get()
         files = list(tertiary_files_listbox.get(0, tk.END))
 
-    #TODO - make it so that will properly update the fields
     if sort_key == "Name":
         #Calls merge sort for the names of the text files
-        #sort.merge_sort_name(files)
         files_name_sorted = sort.sort_files(files,"name", directory)
-
-        main_files_listbox.delete(0, tk.END)
-        for file in files_name_sorted:
-            main_files_listbox.insert(tk.END, file)
+        rewrite_listbox(listbox_number, files_name_sorted)
 
     elif sort_key == "Author":
         #Calls merge sort for the Authors of the text files
         files_author_sorted = sort.sort_files(files,"author",directory)
-
-        secondary_files_listbox.delete(0, tk.END)
-        for file in files_author_sorted:
-            secondary_files_listbox.insert(tk.END, file)
+        rewrite_listbox(listbox_number, files_author_sorted)
 
     elif sort_key == "Date":
         #Calls merge sort for the Date of the text files
         files_date_sorted = sort.sort_files(files,"date",directory)
+        rewrite_listbox(listbox_number, files_date_sorted)
 
+def rewrite_listbox(listbox_number, sorted_files):
+
+    if listbox_number == 0:
+        main_files_listbox.delete(0, tk.END)
+        for file in sorted_files:
+            main_files_listbox.insert(tk.END, file)
+
+    if listbox_number == 1:
+        secondary_files_listbox.delete(0, tk.END)
+        for file in sorted_files:
+            secondary_files_listbox.insert(tk.END, file)
+
+    if listbox_number == 2:
         tertiary_files_listbox.delete(0, tk.END)
-        for file in files_date_sorted:
+        for file in sorted_files:
             tertiary_files_listbox.insert(tk.END, file)
+
 
 def update_file_list(listbox, directory):
     listbox.delete(0, tk.END)
