@@ -1,0 +1,5 @@
+$! Dave Mustaine
+$% 10/08/25
+
+This is the text for ref_text 2
+Hello World B

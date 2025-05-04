@@ -3,22 +3,9 @@ from tkinter import filedialog, ttk
 import os
 from reference_graph import ReferenceGraph
 from plagarizor import detect_plagiarism
+import sort_helper as sort
 
 graph = ReferenceGraph() # Initialize the reference graph
-
-""" def create_nodes_for_selected_files():
-    # Create node for main file
-    main_file = selected_main_file_var.get()
-    if main_file:
-        graph.add_node(main_file)
-
-    # Create nodes for all secondary files
-    selected_indices = secondary_files_listbox.curselection()
-    for idx in selected_indices:
-        sec_file = secondary_files_listbox.get(idx)
-        if sec_file:
-            graph.add_node(sec_file) """
-
 
 def create_nodes_for_selected_files():
     # Create node for main file
@@ -31,6 +18,32 @@ def create_nodes_for_selected_files():
     for filename in tertiary_items:
         if filename:
             graph.add_node(filename)
+
+#Creates directories for the neccessary files if they dont already exist
+def create_file_directories():
+
+    print(__file__)
+
+    current_directory = os.path.dirname(__file__)
+    print(current_directory)
+
+    main_file_directory = os.path.join(current_directory, "mainFiles")
+    ref_file_directory = os.path.join(current_directory, "referenceFiles")
+
+    print(main_file_directory)
+    print(ref_file_directory)
+
+    # if the mainFileDirectory is not present then create it. 
+    if not os.path.exists(main_file_directory):
+        os.makedirs(main_file_directory)
+        print(f"Directory Created: {main_file_directory}")
+
+    # if the referenceFileDirectory is not present then create it. 
+    if not os.path.exists(ref_file_directory):
+        os.makedirs(ref_file_directory)
+        print(f"Directory Created: {ref_file_directory}")
+    
+    return (main_file_directory,ref_file_directory)
 
 
 
@@ -62,6 +75,44 @@ def sort_files(directory, sort_option):
         return sorted(files, key=lambda f: os.path.getsize(os.path.join(directory, f)))
     return files
 
+def sort_files_in_listbox(listbox_number,directory):
+
+    if listbox_number == 0:
+        sort_key = main_sort_dropdown.get()
+        files = list(main_files_listbox.get(0, tk.END))
+    if listbox_number == 1:
+        sort_key = secondary_sort_dropdown.get()
+        files = list(secondary_files_listbox.get(0, tk.END))
+    if listbox_number == 2:
+        sort_key = tertiary_sort_dropdown.get()
+        files = list(tertiary_files_listbox.get(0, tk.END))
+
+    #TODO - make it so that will properly update the fields
+    if sort_key == "Name":
+        #Calls merge sort for the names of the text files
+        #sort.merge_sort_name(files)
+        files_name_sorted = sort.sort_files(files,"name", directory)
+
+        main_files_listbox.delete(0, tk.END)
+        for file in files_name_sorted:
+            main_files_listbox.insert(tk.END, file)
+
+    elif sort_key == "Author":
+        #Calls merge sort for the Authors of the text files
+        files_author_sorted = sort.sort_files(files,"author",directory)
+
+        secondary_files_listbox.delete(0, tk.END)
+        for file in files_author_sorted:
+            secondary_files_listbox.insert(tk.END, file)
+
+    elif sort_key == "Date":
+        #Calls merge sort for the Date of the text files
+        files_date_sorted = sort.sort_files(files,"date",directory)
+
+        tertiary_files_listbox.delete(0, tk.END)
+        for file in files_date_sorted:
+            tertiary_files_listbox.insert(tk.END, file)
+
 def update_file_list(listbox, directory):
     listbox.delete(0, tk.END)
     if directory:
@@ -85,45 +136,6 @@ def on_main_file_double_click(event):
         except Exception as e:
             main_text.delete('1.0', tk.END)
             main_text.insert(tk.END, f"Error reading file:\n{e}")
-
-""" def on_secondary_file_double_click(event):
-    selected = secondary_files_listbox.curselection()
-    if selected and secondary_directory:
-        filename = secondary_files_listbox.get(selected[0])
-        selected_secondary_file_var.set(filename)
-        file_path = os.path.join(secondary_directory, filename)
-        try:
-            with open(file_path, 'r') as f:
-                content = f.read()
-            secondary_text.delete('1.0', tk.END)
-            secondary_text.insert(tk.END, content)
-        except Exception as e:
-            secondary_text.delete('1.0', tk.END)
-            secondary_text.insert(tk.END, f"Error reading file:\n{e}") """
-
-""" def on_secondary_file_double_click(event):
-    selected = secondary_files_listbox.curselection()
-    if selected and secondary_directory:
-        filename = secondary_files_listbox.get(selected[0])
-        selected_secondary_file_var.set(filename)
-        file_path = os.path.join(secondary_directory, filename)
-        try:
-            with open(file_path, 'r') as f:
-                content = f.read()
-            secondary_text.delete('1.0', tk.END)
-            secondary_text.insert(tk.END, content)
-        except Exception as e:
-            secondary_text.delete('1.0', tk.END)
-            secondary_text.insert(tk.END, f"Error reading file:\n{e}")
-        
-        # --- Append to tertiary field ---
-        current_value = selected_tertiary_file_var.get()
-        if filename not in current_value.split(', '):  # Avoid duplicate entries
-            if current_value:
-                new_value = f"{current_value}, {filename}"
-            else:
-                new_value = filename
-            selected_tertiary_file_var.set(new_value) """
 
 def on_secondary_file_double_click(event):
     selected = secondary_files_listbox.curselection()
@@ -212,6 +224,14 @@ def run_plagiarism_analysis():
         analysis_text.insert(tk.END, "Analysis complete.\n")
     
 
+##### Setting Up Directories
+
+main_file_directory, reference_file_directory = create_file_directories()
+
+
+
+
+##### Creating GUI
 root = tk.Tk()
 root.title("CSUF Document Scanner")
 root.geometry("800x700")
@@ -252,7 +272,7 @@ main_directory_frame.grid(row=0, column=0, padx=10, sticky="nsew")
 main_directory_label = tk.Label(main_directory_frame, text="Main File Directory:")
 main_directory_label.grid(row=0, column=0, sticky="w")
 
-main_sort_options = ["Name", "Date Modified", "Size"]
+main_sort_options = ["Name", "Author", "Date"]
 main_sort_dropdown = ttk.Combobox(main_directory_frame, values=main_sort_options, state="readonly", width=15)
 main_sort_dropdown.set("Name")
 main_sort_dropdown.grid(row=0, column=1, padx=5, sticky="e")
@@ -263,6 +283,7 @@ main_selected_entry.grid(row=0, column=2, padx=5, sticky="e")
 main_files_listbox = tk.Listbox(main_directory_frame, height=5)
 main_files_listbox.grid(row=1, column=0, columnspan=3, sticky="nsew")
 main_files_listbox.bind("<Double-Button-1>", on_main_file_double_click)
+main_sort_dropdown.bind("<<ComboboxSelected>>", lambda event: sort_files_in_listbox(0,main_directory))
 
 main_directory_frame.grid_rowconfigure(1, weight=1)
 main_directory_frame.grid_columnconfigure(0, weight=1)
@@ -274,7 +295,7 @@ secondary_directory_frame.grid(row=0, column=1, padx=10, sticky="nsew")
 secondary_directory_label = tk.Label(secondary_directory_frame, text="Secondary File Directory:")
 secondary_directory_label.grid(row=0, column=0, sticky="w")
 
-secondary_sort_options = ["Name", "Date Modified", "Size"]
+secondary_sort_options = ["Name", "Author", "Date"]
 secondary_sort_dropdown = ttk.Combobox(secondary_directory_frame, values=secondary_sort_options, state="readonly", width=15)
 secondary_sort_dropdown.set("Name")
 secondary_sort_dropdown.grid(row=0, column=1, padx=5, sticky="e")
@@ -285,6 +306,7 @@ secondary_selected_entry.grid(row=0, column=2, padx=5, sticky="e")
 secondary_files_listbox = tk.Listbox(secondary_directory_frame, height=5)
 secondary_files_listbox.grid(row=1, column=0, columnspan=3, sticky="nsew")
 secondary_files_listbox.bind("<Double-Button-1>", on_secondary_file_double_click)
+secondary_sort_dropdown.bind("<<ComboboxSelected>>", lambda event: sort_files_in_listbox(1,secondary_directory))
 
 secondary_directory_frame.grid_rowconfigure(1, weight=1)
 secondary_directory_frame.grid_columnconfigure(0, weight=1)
@@ -296,7 +318,7 @@ tertiary_directory_frame.grid(row=0, column=2, padx=10, sticky="nsew")
 tertiary_directory_label = tk.Label(tertiary_directory_frame, text="Tertiary File Directory:")
 tertiary_directory_label.grid(row=0, column=0, sticky="w")
 
-tertiary_sort_options = ["Name", "Date Modified", "Size"]
+tertiary_sort_options = ["Name", "Author", "Date"]
 tertiary_sort_dropdown = ttk.Combobox(tertiary_directory_frame, values=tertiary_sort_options, state="readonly", width=15)
 tertiary_sort_dropdown.set("Name")
 tertiary_sort_dropdown.grid(row=0, column=1, padx=5, sticky="e")
@@ -307,7 +329,7 @@ tertiary_selected_entry.grid(row=0, column=2, padx=5, sticky="e")
 
 tertiary_files_listbox = tk.Listbox(tertiary_directory_frame, height=5)
 tertiary_files_listbox.grid(row=1, column=0, columnspan=3, sticky="nsew")
-#tertiary_files_listbox.bind("<Double-Button-1>", on_tertiary_file_double_click)
+#tertiary_sort_dropdown.bind("<<ComboboxSelected>>", lambda event: sort_files_in_listbox(2))
 
 tertiary_directory_frame.grid_rowconfigure(1, weight=1)
 tertiary_directory_frame.grid_columnconfigure(0, weight=1)
@@ -344,19 +366,6 @@ search_secondary_entry.pack(side="left", padx=5)
 
 search_secondary_btn = tk.Button(secondary_file_frame, text="Search", command=search_secondary_substring)
 search_secondary_btn.pack(side="left", padx=5)
-
-""" secondary_file_label = tk.Label(root, text="Secondary File:")
-secondary_file_label.pack(anchor="w", padx=10)
-
-# Search bar for Secondary File (same level as the label)
-search_secondary_frame = tk.Frame(root)
-search_secondary_frame.pack(fill="x", padx=10)
-
-search_secondary_entry = tk.Entry(search_secondary_frame, width=30)
-search_secondary_entry.pack(side="left", padx=5)
-
-search_secondary_btn = tk.Button(search_secondary_frame, text="Search", command=search_secondary_substring)
-search_secondary_btn.pack(side="left", padx=5) """
 
 # Secondary File Text Box
 secondary_text = tk.Text(root, height=10)
