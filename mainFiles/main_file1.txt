@@ -1,0 +1,5 @@
+$! Ozzy Osbourne
+$% 04/13/23
+
+This is the text for main_text 1
+Hello World
