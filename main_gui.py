@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 import os
 from reference_graph import ReferenceGraph
-from plagarizor import detect_plagiarism
+from plagarizor import detect_plagiarism, calculate_similarity
 import sort_helper as sort
 
 graph = ReferenceGraph() # Initialize the reference graph
@@ -214,13 +214,11 @@ def show_reference_data():
 def run_plagiarism_analysis():
     main_file = selected_main_file_var.get()
     secondary_files = [secondary_files_listbox.get(i) for i in secondary_files_listbox.curselection()] ## get selected files
-    
+
     if main_file and secondary_files:
-        # Read the main file content
         with open(os.path.join(main_directory, main_file), 'r') as f:
             main_content = f.read()
 
-        CHOPLENGTH = 10
         analysis_text.delete('1.0', tk.END)
         analysis_text.insert(tk.END, "Plagiarism Analysis Results:\n")
 
@@ -228,16 +226,35 @@ def run_plagiarism_analysis():
             with open(os.path.join(secondary_directory, sec_file), 'r') as f:
                 reference_content = f.read()
 
-            results = detect_plagiarism(reference_content, main_content, CHOPLENGTH)
+            matches = detect_plagiarism(reference_content, main_content, method="rabin-karp")
 
-            if not results:
+            if not matches:
                 analysis_text.insert(tk.END, f"No plagiarism detected from {sec_file}.\n")
             else:
-                for result in results:
-                    analysis_text.insert(tk.END, f"[{sec_file}] Match found at index {result['examined_index']} in main file:\n")
-                    analysis_text.insert(tk.END, f">>> {result['match_text']}\n")
-                    analysis_text.insert(tk.END, f"Originally found at index {result['reference_index']} in reference file.\n\n")
+                analysis_text.insert(tk.END, f"Plagiarism detected from {sec_file}:\n")
+                for match in matches:
+                    analysis_text.insert(tk.END, f">>> {match}\n")
+                    main_text.tag_delete("plag")
+                    secondary_text.tag_delete("plag_ref")
+                    start_main = main_content.find(match)
+                if start_main != -1:
+                    end_main = start_main + len(match)
+                    main_text.tag_add("plag", f"1.0+{start_main}c", f"1.0+{end_main}c")
+                    main_text.tag_config("plag", background="salmon")
+
+                start_ref = reference_content.find(match)
+                if start_ref != -1:
+                    end_ref = start_ref + len(match)
+                    secondary_text.tag_add("plag_ref", f"1.0+{start_ref}c", f"1.0+{end_ref}c")
+                    secondary_text.tag_config("plag_ref", background="lightblue")
+                analysis_text.insert(tk.END, "\n")
+
+            similarity = calculate_similarity(reference_content, main_content)
+            analysis_text.insert(tk.END, f"Similarity with {sec_file}: {similarity:.2f}%\n\n")
+
         analysis_text.insert(tk.END, "Analysis complete.\n")
+
+
     
 
 ##### Setting Up Directories
