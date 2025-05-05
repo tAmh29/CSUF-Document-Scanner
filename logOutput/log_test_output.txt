@@ -1,0 +1,21 @@
+#@ Nickname-Filename values
+
+A = essay.txt
+*
+B = source.txt
+*
+
+#? 10 Buffer length
+
+#A Section
+
+A: 50 > B: 200
+% B.1: 200-210
+*
+
+#B Section
+
+B.1: 200 > $
+% -1
+*
+
