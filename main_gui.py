@@ -132,6 +132,8 @@ def on_main_file_double_click(event):
     selected = main_files_listbox.curselection()
     if selected and main_directory:
         filename = main_files_listbox.get(selected[0])
+        if isinstance(filename, tuple):
+            filename = filename[0]
         selected_main_file_var.set(filename)
         file_path = os.path.join(main_directory, filename)
         try:
@@ -148,6 +150,9 @@ def on_secondary_file_double_click(event):
     selected = secondary_files_listbox.curselection()
     if selected and secondary_directory:
         filename = secondary_files_listbox.get(selected[0])
+        if isinstance(filename, tuple):
+            filename = filename[0]
+        #filename = filename[0]
         selected_secondary_file_var.set(filename)
         file_path = os.path.join(secondary_directory, filename)
         try:
@@ -164,6 +169,10 @@ def on_secondary_file_double_click(event):
         if filename not in existing_items:
             tertiary_files_listbox.insert(tk.END, filename)
 
+def get_only_filename():
+
+
+    return
 
 def search_main_substring():
     search_term = search_main_entry.get()
