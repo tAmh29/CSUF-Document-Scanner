@@ -213,6 +213,17 @@ def show_reference_data():
     for node in graph.nodes.values():
         ref_text.insert(tk.END, f"Document: {node.document_name}\n")
 
+def on_search_method_change(event):
+    selected_method = selected_search_method.get()
+    if selected_method == "rabin-karp":
+        print("Rabin-Karp method selected")
+    elif selected_method == "kmp":
+        print("KMP method selected")
+    elif selected_method == "naive":
+        print("Naive method selected")
+    else:
+        print("Unknown method selected")
+
 def run_plagiarism_analysis():
     main_file = selected_main_file_var.get()
     secondary_files = [secondary_files_listbox.get(i) for i in secondary_files_listbox.curselection()] ## get selected files
@@ -230,7 +241,8 @@ def run_plagiarism_analysis():
             with open(os.path.join(secondary_directory, sec_file), 'r') as f:
                 reference_content = f.read()
 
-            matches = detect_plagiarism(reference_content, main_content, method="rabin-karp")
+            matches = detect_plagiarism(reference_content, main_content, method=selected_search_method.get())
+            print(f"Matches found using method: {selected_search_method.get()}")
 
             if not matches:
                 analysis_text.insert(tk.END, f"No plagiarism detected from {sec_file}.\n")
@@ -290,6 +302,9 @@ root.title("CSUF Document Scanner")
 root.geometry("800x700")
 root.columnconfigure(0, weight=1)
 
+selected_search_method = tk.StringVar()
+selected_search_method.set("rabin-karp")
+
 main_directory = None
 secondary_directory = None
 
@@ -307,8 +322,18 @@ select_secondary_btn.grid(row=0, column=1, padx=5)
 reference_button = tk.Button(top_frame, text="Show Reference Data", command=show_reference_data)
 reference_button.grid(row=0, column=2, padx=5)
 
+search_dropdown = ttk.Combobox(
+    top_frame,
+    textvariable=selected_search_method,
+    values=["Rabin-Karp", "KMP", "Naive"],
+    state="readonly",
+    width=15
+)
+search_dropdown.bind("<<ComboboxSelected>>", on_search_method_change)
+search_dropdown.grid(row=0, column=3, padx=5)
+
 plagiarism_button = tk.Button(top_frame, text="Run Plagiarism Check", command=run_plagiarism_analysis)
-plagiarism_button.grid(row=0, column=3, padx=5)
+plagiarism_button.grid(row=0, column=4, padx=5)
 
 # Variables to hold the selected file names
 selected_main_file_var = tk.StringVar()

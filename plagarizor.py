@@ -17,7 +17,7 @@ def generate_ngrams(text, min_len=2, max_len=4):
             ngrams.append(' '.join(words[i:i + n]))
     return ngrams
 
-def detect_plagiarism(reference_text, target_text, method="rabin-karp"):
+def detect_plagiarism(reference_text, target_text, method):
     match_fn = {
         "rabin-karp": rabin_karp.rabin_karp,
         "kmp": kmp_search.kmp_search,
