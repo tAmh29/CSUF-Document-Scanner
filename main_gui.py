@@ -6,6 +6,7 @@ from plagarizor import detect_plagiarism, calculate_similarity
 from traversal_graph import create_traversal_graph
 from Algorithm import bfs, dfs
 import sort_helper as sort
+import time
 
 graph = ReferenceGraph() # Initialize the reference graph
 
@@ -215,11 +216,11 @@ def show_reference_data():
 
 def on_search_method_change(event):
     selected_method = selected_search_method.get()
-    if selected_method == "rabin-karp":
+    if selected_method == "Rabin-Karp":
         print("Rabin-Karp method selected")
-    elif selected_method == "kmp":
+    elif selected_method == "KMP":
         print("KMP method selected")
-    elif selected_method == "naive":
+    elif selected_method == "Naive":
         print("Naive method selected")
     else:
         print("Unknown method selected")
@@ -240,10 +241,10 @@ def run_plagiarism_analysis():
         for sec_file in secondary_files:
             with open(os.path.join(secondary_directory, sec_file), 'r') as f:
                 reference_content = f.read()
-
+            start = time.time()
             matches = detect_plagiarism(reference_content, main_content, method=selected_search_method.get())
-            print(f"Matches found using method: {selected_search_method.get()}")
-
+            end = time.time()
+            analysis_text.insert(tk.END, f"Time taken for {sec_file}: {end - start:.2f} seconds\n")
             if not matches:
                 analysis_text.insert(tk.END, f"No plagiarism detected from {sec_file}.\n")
             else:
