@@ -2,6 +2,7 @@ import os
 import huffman_algorithm as huffman
 from bitarray import bitarray
 from datetime import datetime
+from pathlib import Path
 
 
 #Creates directories needed for storing huffman file outputs and then later decompressing those files
@@ -34,7 +35,7 @@ def get_output_file_path(directory_path, file_name, creation_time, extension):
 
     full_file_name = file_name + "_" + creation_time + "_" + extension
 
-    full_output_path = directory_path / full_file_name
+    full_output_path = Path(directory_path) / full_file_name
 
     return full_output_path
 
@@ -64,6 +65,13 @@ def read_file(file_path):
         text = ' '.join(line.strip() for line in file) # Read the content of the file line by line
     file.close() # Close the file after reading 
     return text
+
+def write_file(file_path, data_to_write):
+    
+    with open(file_path, 'w') as file:
+        file.write(data_to_write)
+
+    return file_path
 
 #sets up log file path 
 

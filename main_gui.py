@@ -7,6 +7,7 @@ from traversal_graph import create_traversal_graph
 from Algorithm import bfs, dfs
 import sort_helper as sort
 import time
+import huffman_handler
 
 graph = ReferenceGraph() # Initialize the reference graph
 
@@ -293,7 +294,7 @@ def run_plagiarism_analysis():
 ##### Setting Up Directories
 
 main_file_directory, reference_file_directory = create_file_directories()
-
+huffman_output_directory, huffman_codes_output = huffman_handler.create_huffman_directories
 
 
 

@@ -1,4 +1,5 @@
 import os
+import huffman_handler
 
 class PlagiarismLog:
     def __init__(self):
@@ -36,6 +37,18 @@ class PlagiarismLog:
             'src_index': src_index,
             'not_found': True
         })
+
+    def compress_log(self, log_file):
+
+        huffman_output_directory, huffman_codes_output = huffman_handler.create_huffman_directories()
+        time_of_compression = huffman_handler.get_current_time()
+        encoded_file_ouput = huffman_handler.get_output_file_path(huffman_output_directory,"encoded",time_of_compression,".bin")
+        huffman_code_file_output = huffman_handler.get_output_file_path(huffman_codes_output,"huffman_codes",time_of_compression,".txt")
+        encoded_text, code = huffman_handler.encode_log(log_file)
+        huffman_handler.to_bitarray_write(encoded_file_ouput, encoded_text)
+        huffman_handler.write_file(huffman_code_file_output,code)
+
+        return encoded_file_ouput, huffman_code_file_output
         
     def write_log(self, filename):
         """Writes the collected log data to a file inside the 'logOutput' directory."""
@@ -66,3 +79,5 @@ class PlagiarismLog:
                         f.write(f"{letter}: {entry['src_index']} > {entry['target_letter']}: {entry['target_index']}\n")
                         f.write(f"% {entry['ref_label']}: {entry['ref_start']}-{entry['ref_end']}\n*\n")
                 f.write("\n")
+
+        self.compress_log(full_path)
