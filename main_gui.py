@@ -3,6 +3,8 @@ from tkinter import filedialog, ttk
 import os
 from reference_graph import ReferenceGraph
 from plagarizor import detect_plagiarism, calculate_similarity
+from traversal_graph import create_traversal_graph
+from Algorithm import bfs, dfs
 import sort_helper as sort
 
 graph = ReferenceGraph() # Initialize the reference graph
@@ -218,6 +220,8 @@ def run_plagiarism_analysis():
     if main_file and secondary_files:
         with open(os.path.join(main_directory, main_file), 'r') as f:
             main_content = f.read()
+        log_path = os.path.join(os.path.dirname(__file__), "plagiarism_log.txt")
+        open(log_path, "w").close()
 
         analysis_text.delete('1.0', tk.END)
         analysis_text.insert(tk.END, "Plagiarism Analysis Results:\n")
@@ -232,25 +236,41 @@ def run_plagiarism_analysis():
                 analysis_text.insert(tk.END, f"No plagiarism detected from {sec_file}.\n")
             else:
                 analysis_text.insert(tk.END, f"Plagiarism detected from {sec_file}:\n")
+                main_text.tag_delete("plag")
+                secondary_text.tag_delete("plag_ref")
                 for match in matches:
+                    with open(log_path, "a") as log_file:
+                        log_file.write(f"{main_file} --> {sec_file} :: {match}\n")
                     analysis_text.insert(tk.END, f">>> {match}\n")
-                    main_text.tag_delete("plag")
-                    secondary_text.tag_delete("plag_ref")
                     start_main = main_content.find(match)
-                if start_main != -1:
-                    end_main = start_main + len(match)
-                    main_text.tag_add("plag", f"1.0+{start_main}c", f"1.0+{end_main}c")
-                    main_text.tag_config("plag", background="salmon")
+                    if start_main != -1:
+                        end_main = start_main + len(match)
+                        main_text.tag_add("plag", f"1.0+{start_main}c", f"1.0+{end_main}c")
+                        main_text.tag_config("plag", background="red")
 
-                start_ref = reference_content.find(match)
-                if start_ref != -1:
-                    end_ref = start_ref + len(match)
-                    secondary_text.tag_add("plag_ref", f"1.0+{start_ref}c", f"1.0+{end_ref}c")
-                    secondary_text.tag_config("plag_ref", background="lightblue")
+                    start_ref = reference_content.find(match)
+                    if start_ref != -1:
+                        end_ref = start_ref + len(match)
+                        secondary_text.tag_add("plag_ref", f"1.0+{start_ref}c", f"1.0+{end_ref}c")
+                        secondary_text.tag_config("plag_ref", background="lightblue")
                 analysis_text.insert(tk.END, "\n")
 
             similarity = calculate_similarity(reference_content, main_content)
             analysis_text.insert(tk.END, f"Similarity with {sec_file}: {similarity:.2f}%\n\n")
+
+        try:
+            graph_data = create_traversal_graph(log_path)
+            if main_file in graph_data:
+                bfs_result = bfs.bfs(graph_data, main_file)
+                dfs_result = dfs.dfs(graph_data, main_file)
+
+                analysis_text.insert(tk.END, "\n--- Graph Traversal Results ---\n")
+                analysis_text.insert(tk.END, f"BFS: {' --> '.join(bfs_result)}\n")
+                analysis_text.insert(tk.END, f"DFS: {' --> '.join(dfs_result)}\n")
+            else:
+                analysis_text.insert(tk.END, f"\nNo graph traversal data found for: {main_file}\n")
+        except FileNotFoundError:
+                analysis_text.insert(tk.END, "\nTraversal graph not available (log file missing).\n")
 
         analysis_text.insert(tk.END, "Analysis complete.\n")
 

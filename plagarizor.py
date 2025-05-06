@@ -1,6 +1,6 @@
 from Algorithm import rabin_karp, kmp_search, naive_search
 
-def split_into_phrases(text, length=4):
+def split_into_phrases(text, length=3):
     words = text.split()
     phrases = []
 
@@ -9,6 +9,14 @@ def split_into_phrases(text, length=4):
         phrases.append(phrase)
     return phrases
 
+def generate_ngrams(text, min_len=2, max_len=4):
+    words = text.split()
+    ngrams = []
+    for n in range(min_len, max_len + 1):
+        for i in range(len(words) - n + 1):
+            ngrams.append(' '.join(words[i:i + n]))
+    return ngrams
+
 def detect_plagiarism(reference_text, target_text, method="rabin-karp"):
     match_fn = {
         "rabin-karp": rabin_karp.rabin_karp,
@@ -16,7 +24,7 @@ def detect_plagiarism(reference_text, target_text, method="rabin-karp"):
         "naive": naive_search.naive_search
     }.get(method.lower(), rabin_karp.rabin_karp)
 
-    phrases = split_into_phrases(reference_text)
+    phrases = generate_ngrams(reference_text, min_len=2, max_len=4)
     matches = []
 
     for phrase in phrases:
