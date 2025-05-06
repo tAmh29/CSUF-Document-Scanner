@@ -1,13 +1,13 @@
 from Algorithm import rabin_karp, kmp_search, naive_search
 
-def split_into_phrases(text, length=3):
-    words = text.split()
-    phrases = []
+# def split_into_phrases(text, length=3):
+#     words = text.split()
+#     phrases = []
 
-    for i in range(len(words) - length + 1):
-        phrase = ' '.join(words[i:i + length])
-        phrases.append(phrase)
-    return phrases
+#     for i in range(len(words) - length + 1):
+#         phrase = ' '.join(words[i:i + length])
+#         phrases.append(phrase)
+#     return phrases
 
 def generate_ngrams(text, min_len=2, max_len=4):
     words = text.split()
