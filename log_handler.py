@@ -1,5 +1,6 @@
 import os
 import huffman_handler
+import re
 
 class PlagiarismLog:
     def __init__(self):
@@ -81,3 +82,83 @@ class PlagiarismLog:
                 f.write("\n")
 
         self.compress_log(full_path)
+
+
+
+
+    def parse_log(self, filepath):
+        """Parses a plagiarism log file and returns a PlagiarismLog object."""
+        log = PlagiarismLog()
+
+        current_section = None
+        with open(filepath, 'r') as f:
+            lines = [line.strip() for line in f if line.strip()]
+
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+
+            if line.startswith('#@'):
+                i += 1
+                while i < len(lines) and lines[i] != '*' and not lines[i].startswith('#'):
+                    if '=' in lines[i]:
+                        letter, filename = map(str.strip, lines[i].split('='))
+                        log.add_nickname(letter, filename)
+                    i += 1
+                i += 1  # skip the '*' after each mapping
+                continue
+
+            elif line.startswith('#?'):
+                # Extract buffer length
+                match = re.search(r'#\? (\d+)', line)
+                if match:
+                    log.set_buffer_length(int(match.group(1)))
+                i += 1
+                continue
+
+            elif line.startswith('#') and len(line) == 2:
+                current_section = line[1]
+                i += 1
+                continue
+
+            # Handle section content
+            if current_section and ':' in line and '>' in line:
+                # Read source line
+                if '>' in line and '$' in line:
+                    # Not found entry
+                    src_label, rest = line.split(':')
+                    src_index = int(rest.split('>')[0].strip())
+                    log.add_not_found(current_section, line.split('>')[0].strip(), src_index)
+                    i += 1  # move to the % line
+                    i += 1  # skip '*'
+                    continue
+                else:
+                    # Standard match entry
+                    src_info, target_info = map(str.strip, line.split('>'))
+                    src_letter, src_index = src_info.split(':')
+                    target_letter, target_index = target_info.split(':')
+
+                    i += 1
+                    ref_line = lines[i]
+                    i += 1  # skip '*'
+                    if '%' in ref_line:
+                        _, ref_data = ref_line.split('%', 1)
+                        ref_data = ref_data.strip()
+                        ref_label, ref_range = ref_data.split(':')
+                        ref_start, ref_end = map(int, ref_range.strip().split('-'))
+
+                        log.add_reference(
+                            src_letter.strip(),
+                            int(src_index),
+                            target_letter.strip(),
+                            int(target_index),
+                            ref_label.strip(),
+                            ref_start,
+                            ref_end
+                        )
+                    continue
+            else:
+                i += 1
+
+        return log
+
