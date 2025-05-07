@@ -1,5 +1,7 @@
 import os
 import huffman_handler
+import re
+from datetime import datetime
 
 class PlagiarismLog:
     def __init__(self):
@@ -38,6 +40,13 @@ class PlagiarismLog:
             'not_found': True
         })
 
+    def get_creation_time(self):
+
+        current_time = datetime.now()
+        current_time_string = str(current_time.month) + "_" + str(current_time.day) + "_" + str(current_time.hour) + "_" + str(current_time.minute) + "." + str(current_time.second) 
+
+        return current_time_string
+
     def compress_log(self, log_file):
 
         huffman_output_directory, huffman_codes_output = huffman_handler.create_huffman_directories()
@@ -50,14 +59,15 @@ class PlagiarismLog:
 
         return encoded_file_ouput, huffman_code_file_output
         
-    def write_log(self, filename):
+    def write_log(self):
         """Writes the collected log data to a file inside the 'logOutput' directory."""
         # Ensure the output directory exists
         output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logOutput")
         os.makedirs(output_dir, exist_ok=True)
 
         # Full path to the log file
-        full_path = os.path.join(output_dir, filename)
+        full_filename = "log_" + self.get_creation_time() + ".txt"
+        full_path = os.path.join(output_dir, full_filename)
 
         with open(full_path, 'w') as f:
             # Header: Nickname-Filename assignments
@@ -81,3 +91,85 @@ class PlagiarismLog:
                 f.write("\n")
 
         self.compress_log(full_path)
+
+        return full_path
+
+
+
+
+    def parse_log(self, filepath):
+        """Parses a plagiarism log file and returns a PlagiarismLog object."""
+        log = PlagiarismLog()
+
+        current_section = None
+        with open(filepath, 'r') as f:
+            lines = [line.strip() for line in f if line.strip()]
+
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+
+            if line.startswith('#@'):
+                i += 1
+                while i < len(lines) and lines[i] != '*' and not lines[i].startswith('#'):
+                    if '=' in lines[i]:
+                        letter, filename = map(str.strip, lines[i].split('='))
+                        log.add_nickname(letter, filename)
+                    i += 1
+                i += 1  # skip the '*' after each mapping
+                continue
+
+            elif line.startswith('#?'):
+                # Extract buffer length
+                match = re.search(r'#\? (\d+)', line)
+                if match:
+                    log.set_buffer_length(int(match.group(1)))
+                i += 1
+                continue
+
+            elif line.startswith('#') and len(line) == 2:
+                current_section = line[1]
+                i += 1
+                continue
+
+            # Handle section content
+            if current_section and ':' in line and '>' in line:
+                # Read source line
+                if '>' in line and '$' in line:
+                    # Not found entry
+                    src_label, rest = line.split(':')
+                    src_index = int(rest.split('>')[0].strip())
+                    log.add_not_found(current_section, line.split('>')[0].strip(), src_index)
+                    i += 1  # move to the % line
+                    i += 1  # skip '*'
+                    continue
+                else:
+                    # Standard match entry
+                    src_info, target_info = map(str.strip, line.split('>'))
+                    src_letter, src_index = src_info.split(':')
+                    target_letter, target_index = target_info.split(':')
+
+                    i += 1
+                    ref_line = lines[i]
+                    i += 1  # skip '*'
+                    if '%' in ref_line:
+                        _, ref_data = ref_line.split('%', 1)
+                        ref_data = ref_data.strip()
+                        ref_label, ref_range = ref_data.split(':')
+                        ref_start, ref_end = map(int, ref_range.strip().split('-'))
+
+                        log.add_reference(
+                            src_letter.strip(),
+                            int(src_index),
+                            target_letter.strip(),
+                            int(target_index),
+                            ref_label.strip(),
+                            ref_start,
+                            ref_end
+                        )
+                    continue
+            else:
+                i += 1
+
+        return log
+
