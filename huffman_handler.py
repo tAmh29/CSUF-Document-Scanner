@@ -66,11 +66,18 @@ def read_file(file_path):
     file.close() # Close the file after reading 
     return text
 
+def read_bin_file(file_path):
+
+    with open(file_path, 'rb') as file:
+        read_bin_file = file.read()
+
+    return read_bin_file
+
 def write_file(file_path, data_to_write):
     
     with open(file_path, 'w') as file:
-        file.write(data_to_write)
-
+        for key, value in data_to_write.items():
+            file.write(f"{key}: {value}\n")
     return file_path
 
 #sets up log file path 
@@ -102,4 +109,19 @@ def read_to_bitarray(file_path):
     encoded_text_from_file = bits.to01()
 
     return encoded_text_from_file
+
+def code_file_to_dict(huffman_code_file):
+    code_dict = {}
+
+    with open(huffman_code_file, "r") as file:
+        for line in file:
+            line = line.strip()
+            if line:  # skip empty lines
+                key, value = line.split(":", 1)
+                code_dict[key.strip()] = value.strip()
+
+        print(code_dict)
+
+    return code_dict
+
 
