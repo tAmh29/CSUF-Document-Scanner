@@ -214,6 +214,21 @@ def show_reference_data():
     ref_text.insert(tk.END, "Reference data goes here...\n")
     for node in graph.nodes.values():
         ref_text.insert(tk.END, f"Document: {node.document_name}\n")
+    
+
+    ##
+
+    ## See https://networkx.org/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx.html for draw options
+    DRAW_OPTIONS = {
+        'with_labels':True,
+        'node_color':'#37eb13',
+        'alpha':0.7,
+        'style':'dashed'
+    }
+    #graph.add_edge(graph.)
+    graph.add_edge('main_file1.txt','ref_file2.txt',0.5)
+    graph.visualize_graph(**DRAW_OPTIONS)
+    ##
 
 def on_search_method_change(event):
     selected_method = selected_search_method.get()
