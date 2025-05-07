@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
 import os
+from tkinter import messagebox
 from reference_graph import ReferenceGraph
 from plagarizor import detect_plagiarism, calculate_similarity
 from traversal_graph import create_traversal_graph
@@ -8,6 +9,8 @@ from Algorithm import bfs, dfs
 import sort_helper as sort
 import time
 import huffman_handler
+from reference_graph import build_reference_graph_from_log
+from log_handler import PlagiarismLog
 
 graph = ReferenceGraph() # Initialize the reference graph
 
@@ -206,6 +209,7 @@ def search_secondary_substring():
 
 def show_reference_data():
     create_nodes_for_selected_files()
+    log_path = os.path.join(os.path.dirname(__file__), "plagiarism_log.txt")
 
     ref_window = tk.Toplevel(root)
     ref_window.title("Reference Data")
@@ -225,6 +229,9 @@ def show_reference_data():
         'alpha':0.7,
         'style':'dashed'
     }
+
+    ref_graph = build_reference_graph_from_log(log_path)
+    ref_graph.display_graph()
     #graph.add_edge(graph.)
     graph.add_edge('main_file1.txt','ref_file2.txt',0.5)
     graph.visualize_graph(**DRAW_OPTIONS)
@@ -268,9 +275,11 @@ def run_plagiarism_analysis():
                 main_text.tag_delete("plag")
                 secondary_text.tag_delete("plag_ref")
                 for match in matches:
-                    with open(log_path, "a") as log_file:
-                        log_file.write(f"{main_file} --> {sec_file} :: {match}\n")
-                    analysis_text.insert(tk.END, f">>> {match}\n")
+                    log = PlagiarismLog()
+                    log.add_nickname("A", main_file)
+                    log.add_nickname("B", sec_file)
+                    log.set_buffer_length(10)
+
                     start_main = main_content.find(match)
                     if start_main != -1:
                         end_main = start_main + len(match)
@@ -282,6 +291,8 @@ def run_plagiarism_analysis():
                         end_ref = start_ref + len(match)
                         secondary_text.tag_add("plag_ref", f"1.0+{start_ref}c", f"1.0+{end_ref}c")
                         secondary_text.tag_config("plag_ref", background="lightblue")
+                    log.add_reference("A", start_main, "B", start_ref, "B.1", start_ref, end_ref)
+                    log.write_log()
                 analysis_text.insert(tk.END, "\n")
 
             similarity = calculate_similarity(reference_content, main_content)
@@ -309,7 +320,7 @@ def run_plagiarism_analysis():
 ##### Setting Up Directories
 
 main_file_directory, reference_file_directory = create_file_directories()
-huffman_output_directory, huffman_codes_output = huffman_handler.create_huffman_directories
+huffman_output_directory, huffman_codes_output = huffman_handler.create_huffman_directories()
 
 
 
