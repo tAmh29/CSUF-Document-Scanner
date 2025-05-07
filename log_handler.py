@@ -1,6 +1,7 @@
 import os
 import huffman_handler
 import re
+from datetime import datetime
 
 class PlagiarismLog:
     def __init__(self):
@@ -39,6 +40,13 @@ class PlagiarismLog:
             'not_found': True
         })
 
+    def get_creation_time(self):
+
+        current_time = datetime.now()
+        current_time_string = str(current_time.month) + "_" + str(current_time.day) + "_" + str(current_time.hour) + "_" + str(current_time.minute) + "." + str(current_time.second) 
+
+        return current_time_string
+
     def compress_log(self, log_file):
 
         huffman_output_directory, huffman_codes_output = huffman_handler.create_huffman_directories()
@@ -51,14 +59,15 @@ class PlagiarismLog:
 
         return encoded_file_ouput, huffman_code_file_output
         
-    def write_log(self, filename):
+    def write_log(self):
         """Writes the collected log data to a file inside the 'logOutput' directory."""
         # Ensure the output directory exists
         output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logOutput")
         os.makedirs(output_dir, exist_ok=True)
 
         # Full path to the log file
-        full_path = os.path.join(output_dir, filename)
+        full_filename = "log_" + self.get_creation_time() + ".txt"
+        full_path = os.path.join(output_dir, full_filename)
 
         with open(full_path, 'w') as f:
             # Header: Nickname-Filename assignments
@@ -82,6 +91,8 @@ class PlagiarismLog:
                 f.write("\n")
 
         self.compress_log(full_path)
+
+        return full_path
 
 
 
