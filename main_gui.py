@@ -14,7 +14,7 @@ from log_handler import PlagiarismLog
 from r_graph_visualizer import graphLog
 import networkx as nx
 import matplotlib.pyplot as plt
-
+from Algorithm.longest_common_subsequence import longest_common_subsequence
 
 graph = ReferenceGraph() # Initialize the reference graph
 
@@ -310,6 +310,34 @@ def show_dfs_graph():
 
         draw_graph(subgraph)
 
+def run_lcs_only():
+    main_file = selected_main_file_var.get()
+    sec_file = selected_secondary_file_var.get()
+
+    if not main_file or not sec_file:
+        messagebox.showinfo("LCS Analysis", "Please select both a main file and a secondary file.")
+        return
+
+    with open(os.path.join(main_directory, main_file), 'r', encoding='utf-8') as f:
+        main_content = f.read()
+
+    with open(os.path.join(secondary_directory, sec_file), 'r', encoding='utf-8') as f:
+        reference_content = f.read()
+
+    lcs_str = longest_common_subsequence(reference_content, main_content)
+    lcs_len = len(lcs_str)
+
+    analysis_text.insert(tk.END, f"[LCS Only] Length between {main_file} and {sec_file}: {lcs_len}\n")
+
+    output_dir = os.path.join(os.path.dirname(__file__), "lcsOutput")
+    os.makedirs(output_dir, exist_ok=True)
+    out_path = os.path.join(output_dir, f"lcs_{main_file}_vs_{sec_file}.txt".replace(" ", "_"))
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(lcs_str)
+
+    messagebox.showinfo("LCS Complete", f"LCS written to:\n{out_path}")
+
 
 def run_plagiarism_analysis():
     main_file = selected_main_file_var.get()
@@ -353,13 +381,13 @@ def run_plagiarism_analysis():
                 for match in matches:
                     print(str(match),end="//")
                     start_main = main_content.find(match)
-                    if start_main != -1:
+                    if start_main != -1 and main_content[start_main:start_main + len(match)] == match:
                         end_main = start_main + len(match)
                         main_text.tag_add("plag", f"1.0+{start_main}c", f"1.0+{end_main}c")
                         main_text.tag_config("plag", background="red")
 
                     start_ref = reference_content.find(match)
-                    if start_ref != -1:
+                    if start_ref != -1 and reference_content[start_ref:start_ref + len(match)] == match:
                         end_ref = start_ref + len(match)
                         secondary_text.tag_add("plag_ref", f"1.0+{start_ref}c", f"1.0+{end_ref}c")
                         secondary_text.tag_config("plag_ref", background="lightblue")
@@ -455,6 +483,9 @@ bfs_button.grid(row=0, column=5, padx=5)
 
 dfs_button = tk.Button(top_frame, text="Show DFS Graph", command=show_dfs_graph)
 dfs_button.grid(row=0, column=6, padx=5)
+
+lcs_only_button = tk.Button(top_frame, text="Run LCS Only", command=run_lcs_only)
+lcs_only_button.grid(row=0, column=7, padx=5)
 
 # Variables to hold the selected file names
 selected_main_file_var = tk.StringVar()
