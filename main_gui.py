@@ -11,6 +11,8 @@ import time
 import huffman_handler
 from reference_graph import build_reference_graph_from_log
 from log_handler import PlagiarismLog
+from r_graph_visualizer import graphLog
+
 
 graph = ReferenceGraph() # Initialize the reference graph
 
@@ -207,6 +209,31 @@ def search_secondary_substring():
         secondary_text.tag_config("highlight", background="yellow")
         start_index = end_index
 
+
+
+## string file containing relative path of log.txt file.
+## generally in logOutput\log_m_d_h_min.sec.txt
+
+## NOT IN USE
+def draw_from_log(logloc):
+    ## See https://networkx.org/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx.html for draw options
+    DRAW_OPTIONS = {
+        'with_labels':True,
+        'node_color':'#37eb13',
+        'alpha':0.7,
+        'style':'dashed'
+    }
+    
+
+    ## Get log from file
+    workingLog = PlagiarismLog()
+    workingLog = workingLog.parse_log(logloc)
+    print(workingLog.nickname_map)
+    print(workingLog.buffer_length)
+    print(workingLog.sections)
+
+
+
 def show_reference_data():
     create_nodes_for_selected_files()
     log_path = os.path.join(os.path.dirname(__file__), "plagiarism_log.txt")
@@ -222,20 +249,20 @@ def show_reference_data():
 
     ##
 
-    ## See https://networkx.org/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx.html for draw options
-    DRAW_OPTIONS = {
-        'with_labels':True,
-        'node_color':'#37eb13',
-        'alpha':0.7,
-        'style':'dashed'
-    }
+    # ## See https://networkx.org/documentation/stable/reference/generated/networkx.drawing.nx_pylab.draw_networkx.html for draw options
+    # DRAW_OPTIONS = {
+    #     'with_labels':True,
+    #     'node_color':'#37eb13',
+    #     'alpha':0.7,
+    #     'style':'dashed'
+    # }
 
-    ref_graph = build_reference_graph_from_log(log_path)
-    ref_graph.display_graph()
-    #graph.add_edge(graph.)
-    graph.add_edge('main_file1.txt','ref_file2.txt',0.5)
-    graph.visualize_graph(**DRAW_OPTIONS)
-    ##
+    # ref_graph = build_reference_graph_from_log(log_path)
+    # ref_graph.display_graph()
+    # #graph.add_edge(graph.)
+    # graph.add_edge('main_file1.txt','ref_file2.txt',0.5)
+    # graph.visualize_graph(**DRAW_OPTIONS)
+    # ##
 
 def on_search_method_change(event):
     selected_method = selected_search_method.get()
@@ -274,12 +301,17 @@ def run_plagiarism_analysis():
                 analysis_text.insert(tk.END, f"Plagiarism detected from {sec_file}:\n")
                 main_text.tag_delete("plag")
                 secondary_text.tag_delete("plag_ref")
-                for match in matches:
-                    log = PlagiarismLog()
-                    log.add_nickname("A", main_file)
-                    log.add_nickname("B", sec_file)
-                    log.set_buffer_length(10)
 
+                # kept outside to keep track of multiple instances
+                log = PlagiarismLog()
+                log.add_nickname("A", main_file)
+                log.add_nickname("B", sec_file)
+                log.set_buffer_length(10)
+                count= 1
+                #
+
+                for match in matches:
+                    print(str(match),end="//")
                     start_main = main_content.find(match)
                     if start_main != -1:
                         end_main = start_main + len(match)
@@ -291,13 +323,24 @@ def run_plagiarism_analysis():
                         end_ref = start_ref + len(match)
                         secondary_text.tag_add("plag_ref", f"1.0+{start_ref}c", f"1.0+{end_ref}c")
                         secondary_text.tag_config("plag_ref", background="lightblue")
-                    log.add_reference("A", start_main, "B", start_ref, "B.1", start_ref, end_ref)
-                    log.write_log()
+                    print(log.add_reference("A", start_main, "B", start_ref, "B."+ str(count), start_ref, end_ref),end="//") ## print for error checking
+                    count += 1
+                    
+                    # print("Located Contents")
+                    # for ref in log.sections["A"]:
+                    #     print("!!!!",reference_content[ref["ref_start"]:ref["ref_end"]].replace("\n",""),"!!!!")
+                    
                 analysis_text.insert(tk.END, "\n")
-
+                ## culling has to be performed before written....
+                log.sections["A"] = PlagiarismLog.dedup_dicts(log.sections["A"],"ref_label")
+                ##once culled we can graph if desired.
+                graphLog(log)
+                log.write_log()
+                print(log.sections["A"][0])
+                ##
             similarity = calculate_similarity(reference_content, main_content)
             analysis_text.insert(tk.END, f"Similarity with {sec_file}: {similarity:.2f}%\n\n")
-
+                
         try:
             graph_data = create_traversal_graph(log_path)
             if main_file in graph_data:
