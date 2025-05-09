@@ -12,6 +12,8 @@ import huffman_handler
 from reference_graph import build_reference_graph_from_log
 from log_handler import PlagiarismLog
 from r_graph_visualizer import graphLog
+import networkx as nx
+import matplotlib.pyplot as plt
 
 
 graph = ReferenceGraph() # Initialize the reference graph
@@ -275,11 +277,48 @@ def on_search_method_change(event):
     else:
         print("Unknown method selected")
 
+def draw_graph(graph_dict):
+    G = nx.DiGraph()
+    for src, targets in graph_dict.items():
+        for tgt in targets:
+            G.add_edge(src, tgt)
+
+    pos = nx.spring_layout(G)
+    nx.draw(G, pos, with_labels=True, node_color='lightblue', arrows=True, edge_color='gray')
+    plt.title("Plagiarism Reference Graph")
+    plt.show()
+
+def show_bfs_graph():
+    if hasattr(root, "latest_graph_data") and hasattr(root, "latest_bfs_result"):
+        graph_data = root.latest_graph_data
+        bfs_nodes = root.latest_bfs_result
+        subgraph = {}
+
+        for node in bfs_nodes:
+            subgraph[node] = [neighbor for neighbor in graph_data.get(node, []) if neighbor in bfs_nodes]
+
+        draw_graph(subgraph)
+
+def show_dfs_graph():
+    if hasattr(root, "latest_graph_data") and hasattr(root, "latest_dfs_result"):
+        graph_data = root.latest_graph_data
+        dfs_nodes = root.latest_dfs_result
+        subgraph = {}
+
+        for node in dfs_nodes:
+            subgraph[node] = [neighbor for neighbor in graph_data.get(node, []) if neighbor in dfs_nodes]
+
+        draw_graph(subgraph)
+
+
 def run_plagiarism_analysis():
     main_file = selected_main_file_var.get()
     secondary_files = [secondary_files_listbox.get(i) for i in secondary_files_listbox.curselection()] ## get selected files
 
     if main_file and secondary_files:
+        log = PlagiarismLog()
+        log.add_nickname("A", main_file)
+        log.set_buffer_length(10)
         with open(os.path.join(main_directory, main_file), 'r') as f:
             main_content = f.read()
         log_path = os.path.join(os.path.dirname(__file__), "plagiarism_log.txt")
@@ -289,6 +328,7 @@ def run_plagiarism_analysis():
         analysis_text.insert(tk.END, "Plagiarism Analysis Results:\n")
 
         for sec_file in secondary_files:
+            log.add_nickname("B", sec_file)
             with open(os.path.join(secondary_directory, sec_file), 'r') as f:
                 reference_content = f.read()
             start = time.time()
@@ -341,19 +381,23 @@ def run_plagiarism_analysis():
             similarity = calculate_similarity(reference_content, main_content)
             analysis_text.insert(tk.END, f"Similarity with {sec_file}: {similarity:.2f}%\n\n")
                 
-        try:
-            graph_data = create_traversal_graph(log_path)
-            if main_file in graph_data:
-                bfs_result = bfs.bfs(graph_data, main_file)
-                dfs_result = dfs.dfs(graph_data, main_file)
-
-                analysis_text.insert(tk.END, "\n--- Graph Traversal Results ---\n")
-                analysis_text.insert(tk.END, f"BFS: {' --> '.join(bfs_result)}\n")
-                analysis_text.insert(tk.END, f"DFS: {' --> '.join(dfs_result)}\n")
-            else:
-                analysis_text.insert(tk.END, f"\nNo graph traversal data found for: {main_file}\n")
-        except FileNotFoundError:
-                analysis_text.insert(tk.END, "\nTraversal graph not available (log file missing).\n")
+            try:
+                log_path = log.write_log()
+                graph_data = create_traversal_graph(log_path)
+                if "A" in graph_data:
+                    bfs_result = bfs.bfs(graph_data, "A")
+                    dfs_result = dfs.dfs(graph_data, "A")
+                    root.latest_graph_data = graph_data
+                    root.latest_bfs_result = bfs_result
+                    root.latest_dfs_result = dfs_result
+                    analysis_text.insert(tk.END, "\n--- Graph Traversal Results ---\n")
+                    analysis_text.insert(tk.END, f"BFS: {' --> '.join(bfs_result)}\n")
+                    analysis_text.insert(tk.END, f"DFS: {' --> '.join(dfs_result)}\n")
+                    # draw_graph(graph_data)
+                else:
+                    analysis_text.insert(tk.END, f"\nNo graph traversal data found for: {main_file}\n")
+            except FileNotFoundError:
+                    analysis_text.insert(tk.END, "\nTraversal graph not available (log file missing).\n")
 
         analysis_text.insert(tk.END, "Analysis complete.\n")
 
@@ -405,6 +449,12 @@ search_dropdown.grid(row=0, column=3, padx=5)
 
 plagiarism_button = tk.Button(top_frame, text="Run Plagiarism Check", command=run_plagiarism_analysis)
 plagiarism_button.grid(row=0, column=4, padx=5)
+
+bfs_button = tk.Button(top_frame, text="Show BFS Graph", command=show_bfs_graph)
+bfs_button.grid(row=0, column=5, padx=5)
+
+dfs_button = tk.Button(top_frame, text="Show DFS Graph", command=show_dfs_graph)
+dfs_button.grid(row=0, column=6, padx=5)
 
 # Variables to hold the selected file names
 selected_main_file_var = tk.StringVar()
