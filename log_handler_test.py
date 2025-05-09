@@ -14,9 +14,15 @@ log.add_not_found('B', 'B.1', 200)
 
 log.write_log()
 
-parsed_log = log.parse_log("logOutput/log_test_output.txt")
+#parsed_log = log.parse_log("logOutput/log_test_output.txt")
+#parsed_log2 = log.parse_log("logOutput/log_5_8_19_32.17.txt")
+new_parse_log = log.parse_log2("logOutput/log_5_8_19_32.17.txt")
 
 # Access recovered data
-print(log.nickname_map)
-print(log.buffer_length)
-print(log.sections['A'])  # list of dicts
+##print(log.nickname_map)
+#print(log.buffer_length)
+#print(log.sections['A'])  # list of dicts
+
+print(new_parse_log.nickname_map)
+print(new_parse_log.buffer_length)
+print(new_parse_log.sections['A'])
