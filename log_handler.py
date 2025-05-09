@@ -97,8 +97,84 @@ class PlagiarismLog:
 
 
 
+#    def parse_log(self, filepath):
+#        """Parses a plagiarism log file and returns a PlagiarismLog object."""
+#        log = PlagiarismLog()
+#
+#        current_section = None
+#        with open(filepath, 'r') as f:
+#            lines = [line.strip() for line in f if line.strip()]
+#
+#        i = 0
+#        while i < len(lines):
+#            line = lines[i]
+#
+#            if line.startswith('#@'):
+#                i += 1
+#                while i < len(lines) and lines[i] != '*' and not lines[i].startswith('#'):
+#                    if '=' in lines[i]:
+#                        letter, filename = map(str.strip, lines[i].split('='))
+#                        log.add_nickname(letter, filename)
+#                    i += 1
+#                i += 1  # skip the '*' after each mapping
+#                continue
+#
+#            elif line.startswith('#?'):
+#                # Extract buffer length
+#                match = re.search(r'#\? (\d+)', line)
+#                if match:
+#                    log.set_buffer_length(int(match.group(1)))
+#                i += 1
+#                continue
+#
+#            elif line.startswith('#') and len(line) == 2:
+#                current_section = line[1]
+#                i += 1
+#                continue
+#
+#            # Handle section content
+#            if current_section and ':' in line and '>' in line:
+#                # Read source line
+#                if '>' in line and '$' in line:
+#                    # Not found entry
+#                    src_label, rest = line.split(':')
+#                    src_index = int(rest.split('>')[0].strip())
+#                    log.add_not_found(current_section, line.split('>')[0].strip(), src_index)
+#                    i += 1  # move to the % line
+#                    i += 1  # skip '*'
+#                    continue
+#                else:
+#                    # Standard match entry
+#                    src_info, target_info = map(str.strip, line.split('>'))
+#                    src_letter, src_index = src_info.split(':')
+#                    target_letter, target_index = target_info.split(':')
+#
+#                    i += 1
+#                    ref_line = lines[i]
+#                    i += 1  # skip '*'
+#                    if '%' in ref_line:
+#                        _, ref_data = ref_line.split('%', 1)
+#                        ref_data = ref_data.strip()
+#                        ref_label, ref_range = ref_data.split(':')
+#                        ref_start, ref_end = map(int, ref_range.strip().split('-'))
+#
+#                        log.add_reference(
+#                            src_letter.strip(),
+#                            int(src_index),
+#                            target_letter.strip(),
+#                            int(target_index),
+#                            ref_label.strip(),
+#                            ref_start,
+#                            ref_end
+#                        )
+#                    continue
+#            else:
+#                i += 1
+#
+#        return log
+#   
+
     def parse_log(self, filepath):
-        """Parses a plagiarism log file and returns a PlagiarismLog object."""
         log = PlagiarismLog()
 
         current_section = None
@@ -109,67 +185,79 @@ class PlagiarismLog:
         while i < len(lines):
             line = lines[i]
 
+            # Nickname-Filename section
             if line.startswith('#@'):
                 i += 1
-                while i < len(lines) and lines[i] != '*' and not lines[i].startswith('#'):
+                while i < len(lines):
+                    if lines[i] == '*':
+                        i += 1
+                        continue
+                    elif lines[i].startswith('#'):
+                        break
                     if '=' in lines[i]:
                         letter, filename = map(str.strip, lines[i].split('='))
                         log.add_nickname(letter, filename)
                     i += 1
-                i += 1  # skip the '*' after each mapping
                 continue
 
+            # Buffer length
             elif line.startswith('#?'):
-                # Extract buffer length
                 match = re.search(r'#\? (\d+)', line)
                 if match:
                     log.set_buffer_length(int(match.group(1)))
                 i += 1
                 continue
 
-            elif line.startswith('#') and len(line) == 2:
+            # Section start
+            elif line.startswith('#') and len(line) > 1:
                 current_section = line[1]
                 i += 1
                 continue
 
-            # Handle section content
-            if current_section and ':' in line and '>' in line:
-                # Read source line
-                if '>' in line and '$' in line:
-                    # Not found entry
-                    src_label, rest = line.split(':')
-                    src_index = int(rest.split('>')[0].strip())
-                    log.add_not_found(current_section, line.split('>')[0].strip(), src_index)
-                    i += 1  # move to the % line
-                    i += 1  # skip '*'
-                    continue
-                else:
-                    # Standard match entry
-                    src_info, target_info = map(str.strip, line.split('>'))
-                    src_letter, src_index = src_info.split(':')
-                    target_letter, target_index = target_info.split(':')
+            # Process entries within a section
+            if current_section:
+                # Detect standard match: A: 15 > B: 105
+                if '>' in line and ':' in line and not '$' in line:
+                    src_part, tgt_part = map(str.strip, line.split('>'))
+                    src_letter, src_index = src_part.split(':')
+                    tgt_letter, tgt_index = tgt_part.split(':')
 
                     i += 1
-                    ref_line = lines[i]
-                    i += 1  # skip '*'
-                    if '%' in ref_line:
-                        _, ref_data = ref_line.split('%', 1)
-                        ref_data = ref_data.strip()
-                        ref_label, ref_range = ref_data.split(':')
+                    if i < len(lines) and lines[i].startswith('%'):
+                        ref_line = lines[i][1:].strip()  # remove leading %
+                        ref_label, ref_range = ref_line.split(':')
                         ref_start, ref_end = map(int, ref_range.strip().split('-'))
 
                         log.add_reference(
-                            src_letter.strip(),
+                            src_letter,
                             int(src_index),
-                            target_letter.strip(),
-                            int(target_index),
+                            tgt_letter,
+                            int(tgt_index),
                             ref_label.strip(),
                             ref_start,
                             ref_end
                         )
+                        i += 1  # skip '*'
+                        if i < len(lines) and lines[i] == '*':
+                            i += 1
+                    else:
+                        # malformed block — skip
+                        i += 1
                     continue
-            else:
-                i += 1
+
+                # Not found line: B.1: 105 > $
+                elif '>' in line and '$' in line:
+                    left, _ = map(str.strip, line.split('>'))
+                    src_label, src_index = map(str.strip, left.split(':'))
+
+                    log.add_not_found(current_section, src_label, int(src_index))
+
+                    i += 1  # % -1 line
+                    i += 1  # '*' line
+                    continue
+
+            i += 1
 
         return log
+
 
