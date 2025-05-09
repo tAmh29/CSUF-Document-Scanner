@@ -1,0 +1,27 @@
+#@ Nickname-Filename values
+
+A = complex_paragraph.txt
+*
+B = reference_sentences.txt
+*
+
+#? 10 Buffer length
+
+#A Section
+
+A: 344 > B: 205
+% B.1: 205-322
+*
+A: 68 > B: 0
+% B.4: 0-101
+*
+A: 344 > B: 205
+% B.7: 205-322
+*
+A: 68 > B: 0
+% B.10: 0-101
+*
+A: 344 > B: 205
+% B.19: 205-322
+*
+

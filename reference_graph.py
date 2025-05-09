@@ -88,3 +88,21 @@ def build_reference_graph_from_log(log_path):
 
     print("\nReference graph build complete.\n")
     return graph
+
+
+if __name__ == "__main__":
+    print("hello wolrd!")
+    loc = "logOutput\log_test_output.txt"
+    dummyhandler = PlagiarismLog()
+    log = dummyhandler.parse_log(loc)
+    print(log.nickname_map)
+    print(log.sections)
+    refgraph = build_reference_graph_from_log(loc)
+    print(refgraph.nodes)
+    refgraph.visualize_graph()
+    DRAW_OPTIONS = {
+        'with_labels':True,
+        'node_color':'#37eb13',
+        'alpha':0.7,
+        'style':'dashed'
+    }

@@ -1,0 +1,15 @@
+#@ Nickname-Filename values
+
+A = main_file2.txt
+*
+B = ref_file2.txt
+*
+
+#? 10 Buffer length
+
+#A Section
+
+A: 29 > B: 32
+% B.1: 32-39
+*
+
